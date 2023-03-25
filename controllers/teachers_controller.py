@@ -8,6 +8,7 @@ import os
 from datetime import datetime, timedelta,timezone
 from dateutil import parser
 from bson import ObjectId
+from controllers.jwt_auth import jwt_auth_post,jwt_auth_get
 
 secret_key = os.getenv('secret_key')
 
@@ -43,15 +44,9 @@ async def handle_register():
 
 async def handle_create_class():
     data = request.get_json(force=True)
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-            return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
+    status,res = jwt_auth_post(data,request)
+    if status:
+        return res
     if classes.validate(data["formData"]):
         return Response(response=json.dumps({"Error": 'Insufficent creds'}), status=401,mimetype='application/json')
     class_obj = classes(data["formData"])
@@ -73,18 +68,11 @@ async def handle_create_class():
 
 
 async def handle_view_attendance():
-    data = request.get_json(force=True)
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-            return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
-    
-    res = await teachers.find({"uname":data["formData"]["uname"]},{"_id":0})
+    data = request.args 
+    status,res = jwt_auth_get(data,request)
+    if status:
+        return res
+    res = await teachers.find({"uname":data["uname"]},{"_id":0})
 
     if not res:
         return Response(response=json.dumps({"Error": "failed to fetch teacher details"}),status=400, mimetype='application/json')

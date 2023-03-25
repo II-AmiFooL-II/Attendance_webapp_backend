@@ -1,4 +1,5 @@
-./models/__pycache__/
-./routes/__pycache__/
-./__pycache__/
-./images/
+/models/__pycache__/
+/routes/__pycache__/
+/__pycache__/
+/images/
+/controllers/__pycache__/

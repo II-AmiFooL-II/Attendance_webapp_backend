@@ -12,6 +12,7 @@ from bson import ObjectId
 import base64
 import pickle
 from bson.binary import Binary
+from controllers.jwt_auth import jwt_auth_post,jwt_auth_get
 
 secret_key = os.getenv('secret_key')
 
@@ -45,34 +46,20 @@ async def handle_register():
     return Response(response=json.dumps({"Error": "failed to save details"}),status=400, mimetype='application/json')
 
 async def handle_list_all_subjects():
-    data = request.get_json(force=True)
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-             return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
-    
+    data = request.args
+    status,res = jwt_auth_get(data,request)
+    if status:
+        return res
     res = await students.find({},{"uname":1,"subject":1},"teachers")
     if res:
-        return Response(response=json.dumps({"No Error": "fetched all subjects that are avilable","data":res},default=str), status=201,mimetype='application/json')
+        return Response(response=json.dumps({"No Error": "fetched all subjects that are avilable","data":res},default=str), status=200,mimetype='application/json')
     return Response(response=json.dumps({"Error": "failed to fetch all subjects that are avilable"}),status=400, mimetype='application/json')
 
 async def handle_subscribe_to_class():
     data = request.get_json(force=True)
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-             return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
-    
+    status,res = jwt_auth_post(data,request)
+    if status:
+        return res
     if "subject_id" not in data["formData"]:
         return Response(response=json.dumps({"Error": "Insufficent details"}),status=400, mimetype='application/json')
     
@@ -102,20 +89,12 @@ async def handle_subscribe_to_class():
     return Response(response=json.dumps({"No Error": "sucessfully subscribed to class"}), status=201,mimetype='application/json')
 
 
-#to be done
 async def handle_list_all_classes():
-    data = request.get_json(force=True)
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-             return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
-    
-    res = await students.find({"uname":data["formData"]["uname"]},{"classes_sub":1})
+    data = request.args
+    status,res = jwt_auth_get(data,request)
+    if status:
+        return res
+    res = await students.find({"uname":data["uname"]},{"classes_sub":1})
     if not res:
         return Response(response=json.dumps({"Error": "failed to fetch all student details"}),status=400, mimetype='application/json')
     print(res)
@@ -139,17 +118,11 @@ async def handle_list_all_classes():
         return Response(response=json.dumps({"No Error": "failed to fetch classes"},default=str), status=400,mimetype='application/json')
 
 async def handle_view_attendance():
-    data = request.get_json(force=True)
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-             return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
-    res = await students.find({"uname":data['formData']["uname"]},{"classes_sub":1})
+    data = request.args
+    status,res = jwt_auth_get(data,request)
+    if status:
+        return res
+    res = await students.find({"uname":data["uname"]},{"classes_sub":1})
     if not res:
         return Response(response=json.dumps({"Error": "failed to fetch students details"}), status=400,mimetype='application/json')
     condition = []
@@ -179,17 +152,9 @@ async def handle_view_attendance():
 
 async def handle_link_face():
     data = request.get_json(force=True)
-    
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-            return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
-    
+    status,res = jwt_auth_post(data,request)
+    if status:
+        return res
     if "img" not in data["formData"]:
         return Response(response=json.dumps({"Error": 'img is missing !!'}), status=401,mimetype='application/json')
     
@@ -218,17 +183,9 @@ async def handle_link_face():
 
 async def handle_attend_class():
     data = request.get_json(force=True)
-    
-    if 'x-access-token' in request.headers:
-        token = request.headers['x-access-token']
-        # return 401 if token is not passed
-        if not  token:
-            return Response(response=json.dumps({"Error": 'Token is missing !!'}), status=401,mimetype='application/json')
-        print(token)
-        token = jwt.decode(token, secret_key,algorithms=['HS256'])
-        if "uname" not in data['formData'] or token['uname']!=data['formData']["uname"]:
-            return Response(response=json.dumps({"Error": 'Token details missmatch !!'}), status=401,mimetype='application/json')
-    
+    status,res = jwt_auth_post(data,request)
+    if status:
+        return res
     if "img" not in data["formData"] or "subject_id" not  in data["formData"] or "class_id" not  in data["formData"]:
         return Response(response=json.dumps({"Error": 'details are missing !!'}), status=401,mimetype='application/json')
 
@@ -283,10 +240,3 @@ async def handle_attend_class():
     if not t_res:
         return Response(response=json.dumps({"Error": "failed save teacher details"}), status=400,mimetype='application/json')
     return Response(response=json.dumps({"No Error": "Marked attendance"}), status=200,mimetype='application/json')
-
-
-    
-
-    
-
-
