@@ -29,7 +29,8 @@ class students():
             "email" : self.email,
             "password" : self.password,
             "roll_no" : self.roll_no,
-            "classes_sub" : self.classes_sub
+            "classes_sub" : self.classes_sub,
+            "classes_attended" : self.classes_attended
         }
 
     @staticmethod
