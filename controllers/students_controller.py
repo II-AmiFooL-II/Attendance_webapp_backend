@@ -50,7 +50,7 @@ async def handle_list_all_subjects():
     status,res = jwt_auth_get(data,request)
     if status:
         return res
-    res = await students.find({},{"uname":1,"subject":1},"teachers")
+    res = await students.find({},{"uname":1,"subject":1,"classes_taken":1,"email":1},"teachers")
     if res:
         return Response(response=json.dumps({"No Error": "fetched all subjects that are avilable","data":res},default=str), status=200,mimetype='application/json')
     return Response(response=json.dumps({"Error": "failed to fetch all subjects that are avilable"}),status=400, mimetype='application/json')
